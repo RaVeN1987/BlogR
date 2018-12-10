@@ -1,0 +1,62 @@
+---
+title: "ReadXlsxFiles"
+author: "Tomas Castaño"
+date: "22 de noviembre de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## How to read a xlsx file in r with multipe Sheets?
+
+Hi Everyone, today i want show you how to read a xlxs file in R, for use this function you must have the library readxl, so the first step is install the readxl library.
+
+
+```{r library}
+# Yo can download the library from cran or github devtools::install_github('dragua/xlsx')
+#install.packages('readxl')
+library(readxl)
+```
+
+If we want to read a xlxs, we can use the function "read_excel", for play with this function we need to pass two basic parameters basic: The file name and the Sheet that we want read.
+
+
+```{r Example}
+#We can use this method to read for example the sheet 1.( with numbers)
+dataWithNumericSheet <- read_excel("example.xlsx", sheet = 1)
+dataWithNumericSheet
+# Or we can use this another method with string
+dataWithStringSheet <- read_excel("example.xlsx", sheet = "Hoja 2")
+dataWithStringSheet
+```
+
+Sometimes we have more of one sheet in a Excel document, and we need all the data of document, in this case we can create a easy solution..
+
+```{r Example2}
+# Using excel_sheets, we can get the names of sheets and create a list with them.
+sheets <- readxl::excel_sheets("example.xlsx")
+sheets <- as.list(sheets)
+
+# When we have the list, we createa loop for each sheet and we save the data in the variable "finalData".
+
+finalData <- data.frame()
+for (i in 1:length(sheets)){
+  if (nrow(finalData) == 0 ) {
+    data <- read_excel("example.xlsx", sheet = sheets[[i]] )
+    finalData <- data
+  }else{
+    dataNext <- read_excel("example.xlsx", sheet = sheets[[i]] )
+    finalData <-  cbind(finalData,  dataNext)
+  }
+}
+finalData
+
+```
+
+As you can see is very easy create a dataframe following our steps, if you have any problem to read excel documents write us and we will help you.
+
+A hug
+

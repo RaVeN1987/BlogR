@@ -1,0 +1,47 @@
+---
+title: "Connect to MySQL with R"
+author: "Tomas Castaño"
+date: "29 de noviembre de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Today i want to show you and example to connect Rstudio with MySQL server, for do that, yo will need the library RMySQL
+
+```{r library}
+library(RMySQL)
+```
+
+First of all, we need to create a conexion with the Database, for do that we need the user, password, db name and host.
+
+```{r Conection}
+
+MyDataBase = dbConnect(MySQL(), user='shipment_root', password='Dmz_5458', dbname='shipment', host='hostingmysql292.nominalia.com')
+```
+
+Ifwe want know the name of the tablesle voy a preguntar
+in the data base we can use the function "dbListTables"
+
+```{r dbListTables}
+
+dbListTables(MyDataBase)
+```
+
+Once we know the tables, we can see what is inside of each one with "dbListFields".
+
+```{r dbListTables2}
+
+dbListFields(MyDataBase, 'wp_shipment_terms')
+
+```
+
+Now, we have connection with the database and using the function "dbGetQuery", we can get the data that we need.
+
+```{r dbListTables3}
+
+DataDB = dbGetQuery(MyDataBase, "select * from wp_shipment_terms")
+head(DataDB)
+```

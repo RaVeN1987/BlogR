@@ -1,0 +1,53 @@
+---
+title: "Beautifull Visualization with ggplot"
+author: "Tomas Castaño"
+date: "29 de noviembre de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Hi everybody how are you? Today I come to present you with a very simple and beautiful way to present our selectable graphics.
+
+To perform this exercise we need the following libraries: plotly and crosstalk.
+
+```{r libraries}
+library(plotly)
+library(crosstalk)
+```
+First of all we load our dataset to be able to play with the data. In this case, it is the number of sales per store in a country.
+
+```{r loadDAta}
+Example <- read.csv("Example.csv")
+Example <- Example[1:5,]
+head(Example)
+```
+
+
+And here the code with a brief explanation:
+
+```{r Example}
+# Here we specify what the variable will be to select
+Selectize <- SharedData$new(Example, ~Shop, "Select a Shop")
+#In this place we created the graph
+p <-  plot_ly(Selectize, color = ~Shop) %>%
+  add_trace(x = ~Shop, y = ~Sales, type = 'bar',
+             text = ~Sales, textposition = 'auto',
+             marker = list(color = 'Shop',
+                           line = list(color = 'rgb(8,48,107)', width = 1.5))) %>%
+  layout(title = paste0("Sales by Shop"),
+         barmode = 'group',
+         xaxis = list(title = "Shop"),
+         yaxis = list(title = "Sales"))
+#Here we create the relationship between the selector and the graph
+select <- highlight(
+  ggplotly(p, tooltip = "Shop"), 
+  selectize = TRUE, persistent = TRUE
+)
+#This helper function makes it easy to put HTML elements side by side.
+bscols(select)
+```
+
+And as they can be we obtain a selectable graph that allows us to analyze the results in a visual way.
