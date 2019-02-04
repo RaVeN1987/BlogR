@@ -1,0 +1,149 @@
+---
+title: "Maps-With-Leaflet"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+key <- "AIzaSyCKmVGEUAEaj9U520Z8Ce_scQQzhmrBSfk"
+getwd()
+
+```
+
+## R Markdown
+
+Hello, everyone!! Today I want to show you how to display your data on a map, to do that, we need these libraries: leaflet, googleway and magrittr.
+
+```{r libraries}
+library(magrittr)
+library(leaflet)
+library(googleway)
+
+
+```
+
+For this example we will use a dataset with data to Switzerland that we can found in the Rstudio Examples, this dataset contain:Swiss Fertility and Socioeconomic Indicators(1888) 
+
+```{r data}
+data <- datasets::swiss
+head(data, 5)
+```
+
+
+If we want to work with leaflet, besides the name of the city we need to know the latitude and longitude of this one. In googleway we can find a function that helps us to do that. For use this library you will need a [API KEY](https://developers.google.com/maps/documentation/javascript/get-api-key)
+which you can get in this link, one time that you have your Api key we can continue.
+
+Before visualizing the data we must to prepare them, for this we will add a new column with the city names.. Against more information we can give to Google, it can find more easily the correct lat and long, for this reason we add the country name with paste0()
+
+```{r PreparingData, message= FALSE, warning= FALSE}
+data$City <- row.names(data)
+
+#Now we use a loop to get the lat and long using The Googlemaps Api.
+for (i in 1:nrow(data)) {
+  geocode <- google_geocode(address = paste0(data$City[i],", Switzerland"), key = key)
+  geocode <- as.data.frame(geocode[[1]])
+  geometry <- geocode$geometry
+  location <- geometry$location
+  data$Long[i] <- location$lng
+  data$Lat[i] <- location$lat
+  
+}
+
+head(data, 5)
+```
+
+Now, we have the data so we can start to display the data, to do this we can use diferents  visual tools like markers, circle or Popups.
+
+<h2>Basemaps</h2>
+
+The first step to create a map is to choose the base maps that we will need, we have 3 kinds of base maps:
+
+Terrain:
+
+```{r Basemaps}
+leaflet(data, width = "100%", height = "250px") %>% addTiles()%>%
+  addProviderTiles(providers$Stamen.Terrain)
+```
+
+Esri.WorldImagery:
+
+```{r Basemaps2}
+leaflet(data, width = "100%", height = "250px") %>% addTiles()%>%
+  addProviderTiles(providers$Esri.WorldImagery)
+```
+
+OpenStreetMap:
+
+```{r Basemaps3}
+leaflet(data, width = "100%", height = "250px") %>% addTiles()%>%
+  addProviderTiles(providers$OpenStreetMap)
+```
+
+You can find more option in this [link](http://leaflet-extras.github.io/leaflet-providers/preview/)
+
+<h2>Add circles, Markers and pop-ups</h2>
+
+if you want to display your data with one variable I recommend you use circles, for this example I want to display the variable Education.
+
+```{r PreparingData2}
+#We create a color palet to display the data
+MyColors<- colorNumeric(c("red", "green", "blue"), 1:100)
+
+leaflet(data) %>% addTiles()%>%
+    addProviderTiles(providers$OpenStreetMap.BlackAndWhite)%>%
+  addCircles(lng = ~Long, lat = ~Lat, weight = 10,
+             radius = ~Education*100, popup = paste0(
+               
+                       colnames(data[7]),": ", data$City, sep = "<br>",
+                       colnames(data[4]),": ", data$Education), color = ~MyColors(Education)
+  )
+
+
+```
+
+<h2>Markers</h2>
+
+This is a good option if you want to display more of one variable in the map, in this  example I display all the data.
+
+
+```{r Markers}
+
+MyColors <- colorNumeric(c("red", "green", "blue"), 1:100)
+
+leaflet(data) %>% addTiles()%>%
+    addProviderTiles(providers$OpenStreetMap.BlackAndWhite)%>%
+  addMarkers( ~Long, ~Lat, popup = paste0(
+                       colnames(data[7]),": ", data$City, sep = "<br>",
+                       colnames(data[2]),": ", data$Agriculture, sep = "<br>",
+                       colnames(data[3]),": ", data$Examination , sep = "<br>",
+                       colnames(data[4]),": ", data$Education, sep = "<br>",
+                       colnames(data[5]),": ", data$Catholic , sep = "<br>",
+                       colnames(data[6]),": ", data$Infant.Mortality
+                       )
+                       ,
+                     label = ~as.character(City)
+                     ) 
+
+```
+
+
+<h2>Pop-ups</h2>
+
+```{r Pop-ups}
+#Here we create the content of the Pop-up
+content <- paste0("<h4 style='color:blue;'>",data$City,"</h2>",
+                       colnames(data[4]),": ", data$Education)
+leaflet(data) %>% addTiles() %>%
+  addPopups(~Long, ~Lat, content,
+    options = popupOptions(closeButton = FALSE)
+  )
+
+```
+
+
+With these tips you will be able to create a beautiful and elegants maps for your reports or apps.
+
+As always, if you have any questions you can write it in the comments. 
+<br>
+<br>
+

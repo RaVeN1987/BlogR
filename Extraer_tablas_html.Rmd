@@ -1,0 +1,67 @@
+---
+title: "Untitled"
+author: "Tomas Castaño"
+date: "16 de mayo de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Alguna vez todos hemos necesitado extraer datos de Wikipedia u otra página web y algunas veces es bastante incomodo estar extrayendo los datos con el teclado y el ratón.
+
+Para todos aquellos que quieran una extracción rápida hoy les dejo un código en R para poder extraer tablas HTML en un segundo.
+
+Para este código vamos a necesitar dos librerías: Rvest y magrittr.
+
+
+```{r Extraer_Wikipedia}
+require(rvest)
+require(magrittr)
+library(rvest)
+library(xml2)
+
+
+url <- "http://infocar.dgt.es/etraffic/DetallesElementos?accion=detallesElemento&tipo=SensorTrafico&nombre=A-381%20Pk%2087.5%20C&elemGenCod=GUID_SEC_114161"
+# Introducimos la página web a buscar
+pagina <- read_html(url, as.data.frame=T, stringsAsFactors = TRUE)
+session <- html_session("http://infocar.dgt.es/etraffic/DetallesElementos?accion=detallesElemento&tipo=SensorTrafico&nombre=A-381%20Pk%2087.5%20C&elemGenCod=GUID_SEC_114161")
+
+#Creamos una función con read_html para que lea la página web.
+pagina %>%  
+        html_form(session)[[5]]       #Aquí indicamos que es una tabla lo que queremos extraer.
+        #.[[2]] %>% 
+        #Aquí ponemos de que tabla del HTML se trata, en nuestro ejemplo es la tercera tabla de la web.
+        #html_form() -> x
+        #Lo guardamos en un csv.
+df = do.call("rbind", lapply(pagina, as.data.frame))
+View(x)
+# #Miramos que la tabla sea la correcta.
+# write.csv(x, "mis_datos_wikipedia.csv")
+# 
+# dplyr::tbl_df(x)
+# args(separate)
+# MNPlargo=separate(x,columna,x$Destino, sep=",",convert=TRUE)
+# 
+# tidyr::separate(x, "Destinos", sep =",")
+# library(dplyr)
+# library(tidyr)
+# df <- data.frame(x)
+# df %>% separate(x, c("Destinos", "Destinos2"), sep =",")
+# count(x$Destinos)
+box_office <- read_html("http://www.boxofficemojo.com/movies/?id=ateam.htm")
+box_office %>% html_node("form") %>% html_form()
+install.packages("RJSONIO")
+require(RJSONIO)    
+json_file <- fromJSON(session)
+class(session)
+Summary(session)
+json_file <- lapply(json_file, function(x) {
+  x[sapply(x, is.null)] <- NA
+  unlist(x)
+})
+
+```
+
+Espero que os haya servido, un saludo: D

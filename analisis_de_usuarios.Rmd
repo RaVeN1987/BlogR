@@ -1,0 +1,429 @@
+---
+title: "Analisis_usuarios_twitter"
+author: "Tomas Casta?o"
+date: "3 de mayo de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+-----------------------------------------------------------------------------------------                                         Objetivo del programa
+-----------------------------------------------------------------------------------------
+Nombre: Usuarios m?s retwitteados en un hashtag.
+
+Parte 1 :
+
+Analizar los usuarios mas activos en relacion a un Hanstang
+
+
+Parte 2 :
+
+Que usuarios con los mas retwiteados en relacion a ese hanstang.
+
+
+Parte 3 :
+
+Que Usuarios han sido citados en una conversacion con ese Hanstag?
+
+
+Parte 4 :
+
+Guardado de Archivo en un txt.
+
+
+Parte 5 :
+
+Cracion de un Chart de la conversacion
+
+
+Parte 6 
+
+Creacion de nubes de Tags.
+
+
+-----------------------------------------------------------------------------------------
+Output:
+Cuatro im?genes de gr?fica de barras, una nube de tags y un fichero.txt
+-----------------------------------------------------------------------------------------
+Empezamos cargando las librer?as necesarias:
+
+```{r libraries}
+require(twitteR)
+library(wordcloud)
+library(stringr)
+library(RCurl)
+library(tm)
+```
+
+Creamos las credenciales de identificaci?n de la API
+
+```{r Login}
+# options(RCurlOptions = list(cainfo = system.file("CurlSSL", "cacert.pem", package = "RCurl")))
+# u = "https://raw.github.com/tonybreyal/Blog-Reference-Functions/master/R/bingSearchXScraper/bingSearchXScraper."
+# x = getURL(u, cainfo = system.file("CurlSSL", "cacert.pem", package = "RCurl"))
+# consumer_key <- "ewmcv54a1xJNiUh5ILJdt75OV"
+# consumer_secret <- "1gIRrhMaKUh5DHRaNLqqnzG9M5nkZLDCAQbZcvMzoqCudq4JPM"
+# access_token <- "m9dyzuKgwyKcZE8CiaEyTCC0yfQVvmSPftTHJoHW"
+# access_secret <- "dk9KE1IULpHM58EF67OCqFjHAHqZA7BSHHhvEYVcx2e67"
+# api_key <- "ewmcv54a1xJNiUh5ILJdt75OV"
+# api_secret <- "1gIRrhMaKUh5DHRaNLqqnzG9M5nkZLDCAQbZcvMzoqCudq4JPM"
+# access_token <- "m9dyzuKgwyKcZE8CiaEyTCC0yfQVvmSPftTHJoHW"
+# access_token_secret <- "dk9KE1IULpHM58EF67OCqFjHAHqZA7BSHHhvEYVcx2e67"
+# options(httr_oauth_cache = TRUE) 
+# setup_twitter_oauth(api_key,api_secret)
+library(rtweet)
+
+setup_twitter_oauth(api_key,api_secret)
+
+```
+Definici?n de las variables
+
+```{r variables}
+
+
+hashtag =  readline("?Cu?l es el hashtag que quieres analizar? ") 
+while (hashtag =="") hashtag =  readline("Por favor, define un hashtag para analizar ") 
+TweetNumber =  readline("Cuantos tweets quieres analizar? ")
+TweetNumber = as.numeric(unlist(strsplit(TweetNumber, ",")))
+geog =  readline("?mbito geogr?fico, dejar vacio si no se quiere colocar, ejemplo:41.378476,2.1701334,150km ")
+if (geog=="") geog=NULL
+## Ejemplo b?squeda geogr?fica "40.46366700000001,-3.7492200000000366,150km"
+nombredelarchivo =  readline("Nombre del archivo donde se quiere grabar ")
+while (nombredelarchivo =="") nombredelarchivo = readline ("No dejes vac?o este campo, o no podr? grabar el archivo ")
+
+```
+
+Realizamos la busqueda del hashtag y creamos un Data Frame con los resultados
+```{r Query}
+rdmTweets <- search_tweets(
+  "#Feminismo", n = 18000, include_rts = FALSE
+)
+
+
+
+rdmTweets <- df[, !apply(is.na(df), 2, all)]
+  # rdmTweets = searchTwitter("#nuclear",n=1000, geo=NULL, since="2017-05-02", until="2017-05-07") -> x
+# rdmTweets2 = searchTwitter("#radiation",n=1000, geo=NULL, since="2017-05-02", until="2017-05-07") -> y
+df = do.call("rbind", lapply(rdmTweets, as.data.frame))
+# db = do.call("rbind", lapply(rdmTweets2, as.data.frame))
+# de = do.call("rbind", lapply(cc, as.data.frame))
+# 
+# df = rbind(df, db)
+```
+
+PARTE 1: LOS USUARIOS M?S ACTIVOS
+-----------------------------------------------------------------------------------------
+
+Transformaci?n a tabla del data frame
+Input: df (data frame)
+Output: counts (table) con el n?mero de twitts realizados por cada usuario
+
+Hacemos un primer plot, de texteo, antes de ordenarlo, una vez lo hemos verificado lo ordenamos.
+
+Output: Paleta entre los colores de N degradados
+output: html_document
+
+Trabajos previos para conseguir algunos datos que ir?n en el plot y transformo la lista de twitts en una forma m?s manejable
+-----------------------------------------------------------------------------------------
+```{r Query2}
+df <- rdmTweets
+counts=table(df$screen_name)
+barplot(counts)
+cc = sort(counts, decreasing=T)
+View(cc)
+# Creamos una paleta de colores para presentar nuestros datos
+# Input: colores RGB y un n?mero de degradados
+degradado = function (color1, color2, degradados)
+{
+  library(grDevices)
+  palete = colorRampPalette(c(color1, color2))
+  palete (degradados)
+}
+paleta = degradado ("#DD0000", "#FFFF00", 10)
+
+#Comienzo a trazar el plot definitivo
+
+tweetsdf = twListToDF(rdmTweets)
+## creo la funci?n last para sacar la ?ltima entrada 
+## y su fecha
+last = function(x) { tail(x, n = 1) }
+
+###############################
+## Dibujo el plot
+###############################
+
+par(mar=c(10,5,2,2), bg="white")  ## Establezco los m?rgenes para ajustar la imagen
+
+barplot(cc[1:15],las=2,cex.names =1, col=paleta)  ## Dibujo un plot de los 10 usuarios TOP
+
+## Incluyo una leyenda con los datos de la b?squeda de cara a poder tener una visi?n
+## de que tipos de datos estoy publicando
+
+hashtag = "Radiacion + nuclear"
+
+legend("topright", title=paste("USUARIOS M?S ACTIVOS en  ",hashtag, sep=""), legend=paste(last(tweetsdf$created), " hasta ",tweetsdf$created[1]), text.col="#FFFFFF", bg="#333333B2", inset=0)
+## Guardamos el plot de usuarios m?s activos ##
+
+continue = readline("Graba el plot y contin?a con el script pulsando (1) ")
+while (continue != "1") continue=readline("Graba el plot y contin?a con el script pulsando (1) ")
+```
+
+###########################
+## PARTE 2: USUARIOS M?S RETWITTEADSO
+#########################
+```{r Program 2}
+
+
+#Limpiamos los datos:
+# Peque?a funci?n que elimina car?cteres que pueden generar problemas en el an?lisis.
+df$text=sapply(df$text,function(row) iconv(row,to='UTF-8'))
+
+# Funci?n que elimina las @ de los usuarios
+trim = function (x) sub('@','',x)
+
+# Extraigo los usuariso que han sido retwitteados
+
+df$rt=sapply(df$text,function(tweet) trim(str_match(tweet,"^RT (@[[:alnum:]_]*)")[2]))
+
+# Genero un Data Frame de la tabla con el que luego elaborar? el barplot
+df.ordered = as.data.frame(table(df$rt), row.names=TRUE)
+
+# Lo ordeno de mayor a menor
+order.freq = order(df.ordered$Freq, decreasing=T)
+
+# Creo el barplot de los 10 usuarios m?s retuiteados
+barplot(df.ordered$Freq[order.freq][1:10], las=2,cex.names =1, col=paleta, names.arg=rownames(df.ordered)[order.freq][1:10])
+
+# A?ado una leyenda, igual que en la parte 1
+legend("topright", title=paste("M?s retwuiteados con el  ",hashtag, sep=""), legend=paste(last(tweetsdf$created), " hasta ",tweetsdf$created[1]), text.col="#FFFFFF", bg="#333333B2", inset=0)
+
+## Guardamos el plot de tweets m?s retwiteados ##
+
+## Hago pausa una segunda pausa   ##
+continue = readline("Graba el plot y contin?a con el script pulsando (2) ")
+while (continue != "2") continue=readline("Graba el plot y contin?a con el script pulsando (2) ")
+```
+
+PARTE 3 : USUARIOS QUE M?S HAN SIDO CITADOS
+EN UNA CONVERSACI?N EN ESTE HASHTAG
+
+```{r Extrac_Users}
+# Extraigo los usuarios citados en los mensajes
+df$to=sapply(df$text,function(tweet) str_extract(tweet,"(@[[:alnum:]_]*)"))
+
+# Creo un mensaje de error y un mecanismo de parada si realmente
+# no hay usuarios citados en esta conversaci?n
+## df$to[is.na(df$to)] = 0
+
+# Limpio "df$to" de car?cteres que estorban (como las @)
+df$to=sapply(df$to,function(name) trim(name))
+
+# Creo un data frame de df$to para facilitar el trabajo
+# con plots
+df.2 = as.data.frame(table(df$to), row.names=TRUE)
+
+# Ordeno de mayor a menor el data frame
+order2.freq = order(df.2$Freq, decreasing=T)
+
+par(mar=c(10,5,2,2))
+
+# Hago el barplot de los usuarios m?s citados
+barplot(df.2$Freq[order2.freq][1:10], las=2,cex.names =1, col=paleta, names.arg=rownames(df.2)[order2.freq][1:10])
+
+# Incluyo una leyenda
+legend("topright", title=paste("Usuarios m?s citados en  ",hashtag, sep=""), legend=paste(last(tweetsdf$created), " hasta ",tweetsdf$created[1]), text.col="#FFFFFF", bg="#333333B2", inset=0)
+```
+
+##############################
+## PARTE 4 GUARDO EL ARCHIVO
+##################################
+
+### Renombro columnas en todos mis data frames
+```{r Extrac_Users2}
+
+colnames(df.ordered) = c("Veces retwiteado")
+colnames(df.2) = c("Citas en conversaci?n")
+cc = as.data.frame(cc)
+colnames(cc) = c("Twitts realizados")
+
+### Comienzo a juntarlos, renombrar columnas y borrar las sobrantes
+
+total1 = merge(cc,df.2, by="row.names", all.x=T)
+rownames(total1) = total1[,1]
+drops = c("Row.names")
+total1 = total1[,!(names(total1) %in% drops)]
+
+total = merge(total1,df.ordered, by="row.names", all.x=T)
+rownames(total) = total[,1]
+total = total[,!(names(total) %in% drops)]
+
+## Elimino los NA por 0 para quedarme una tabla m?s ?til
+total[is.na(total)] = 0
+
+#############################################
+# Ejecuci?n de la funci?n de salvado en TXT
+# Input: matriz df, nombredelarchivo 
+# Output: Un ficher txt con los usuarios y sus RT
+######################################
+
+nombredelarchivo = paste(nombredelarchivo,".txt", sep="")
+write.table(total, file=nombredelarchivo)
+
+engagement = total[,2]+total[,3]
+total ["Engagement"] = engagement
+
+order.freq = order(total[,4], decreasing=T)
+paleta2 = degradado ("#DD0000", "orange", 3)
+
+#### Hago un ?ltimo plot  ######
+barplot( rbind(total[,1][order.freq][1:10],total[,2][order.freq][1:10],total[,3][order.freq][1:10]), names=row.names(total)[order.freq][1:10], beside=TRUE, las=2,cex.names =1, col=paleta2)
+legend("topright", legend=names(total)[1:3], fill=paleta2)
+
+#########################
+
+## Hago otra pausa    ##
+continue = readline("Graba el plot y contin?a con el script pulsando (4) ")
+while (continue != "4") continue=readline("Graba el plot y contin?a con el script pulsando (4) ")
+```
+#########################
+## PARTE 5, HAGO UN CHART DE LA CONVERSACI?N
+#######
+```{r Extrac_Users3}
+
+
+#### Resumen de la conversaci?n  ###
+
+a = colSums(total)
+
+b= c(nrow(total), a)
+b= b[-5]
+print("Resumen de la actividad en la conversaci?n")
+print(b)
+names(b) = c("Participantes", "Twitts realizados", "Citas en conversaci?n", "Veces retwitteado")
+lbls = paste(names(b),b, sep=" ")
+
+par(mar=c(1,3,1,3), bg="white")
+pie(b[2:4], main=paste("Actividad de los ",b[1]," twitteros ",hashtag, sep=""), col=paleta2, label="")
+legend("bottomleft", legend=lbls[2:4], fill=paleta2)
+
+## Hago otra pausa    ##
+continue = readline("Graba el plot y contin?a con el script pulsando (5) ")
+while (continue != "5") continue=readline("Graba el plot y contin?a con el script pulsando (5) ")
+```
+#############################################
+## PARTE 6, CREO UNA NUBE DE TAGS
+#############################################
+```{r tags}
+# obtiene el texto de los tweets
+txt = tweetsdf$text
+
+
+##### inicio limpieza de datos #####
+# remueve retweets
+txtclean = gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", txt)
+# remove @otragente
+txtclean = gsub("@\\w+", "", txtclean)
+# remueve simbolos de puntuaci?n
+txtclean = gsub("[[:punct:]]", "", txtclean)
+# remove n?meros
+txtclean = gsub("[[:digit:]]", "", txtclean)
+# remueve links
+txtclean = gsub("http\\w+", "", txtclean)
+##### fin limpieza de datos #####
+
+# construye un corpus
+corpus = Corpus(VectorSource(txtclean))
+
+# convierte a min?sculas
+corpus = tm_map(corpus, tolower)
+# remueve palabras vac?as (stopwords) en espa?ol
+corpus = tm_map(corpus, removeWords, c(stopwords("spanish"), "#radiation"))
+# carga archivo de palabras vac?as personalizada y lo convierte a ASCII
+sw <- readLines("C:/Users/tomas/Desktop/stopwords.es 2.txt",encoding="UTF-8")
+sw = iconv(sw, to="ASCII//TRANSLIT")
+# remueve palabras vac?as personalizada
+corpus = tm_map(corpus, removeWords, sw)
+# remove espacios en blanco extras
+corpus = tm_map(corpus, stripWhitespace)
+
+# crea una matriz de t?rminos
+tdm <- TermDocumentMatrix(corpus)
+
+# convierte a una matriz
+m = as.matrix(tdm)
+
+# conteo de palabras en orden decreciente
+wf <- sort(rowSums(m),decreasing=TRUE)
+
+# crea un data frame con las palabras y sus frecuencias
+dm <- data.frame(word = names(wf), freq=wf)
+dm -> dm[1:200]-> dm2 
+dm[1:100,] -> dm2 
+wordcloud(dm2$word, dm$freq, random.order=FALSE, colors=brewer.pal(8, "Dark2"))
+
+```
+Parte 7 : Visualizacion de los tweets en un mapa real
+```{r Extrac_Users4}
+doInstall <- TRUE
+toInstall <- c("twitteR", "dismo", "maps", "ggplot2")
+if(doInstall){install.packages(toInstall, repos = "http://cran.us.r-project.org")}
+lapply(toInstall, library, character.only = TRUE)
+colnames(locations)
+
+userInfo <- lookupUsers(df$screenName)  # Batch lookup of user info
+userFrame <- twListToDF(userInfo)  # Convert to a nice dF
+
+locatedUsers <- !is.na(userFrame$location)  # Keep only users with location info
+
+locations <- geocode(userFrame$location[locatedUsers])  # Use amazing API to guess
+# approximate lat/lon from textual location data.
+with(locations, plot(longitude, latitude))
+map(regions=sov.expand("world"))
+help(package = maps) 
+
+worldMap <- map_data(
+  'world', regions="")  # Easiest way to grab a world map shapefile
+
+zp1 <- ggplot(worldMap)
+zp1 <- zp1 + geom_path(aes(x = long, y = lat, group = group),  # Draw map
+                       colour = gray(2/3), lwd = 1/3)
+zp1 <- zp1 + geom_point(data = locations,  # Add points indicating users
+                        aes(x = longitude, y = latitude),
+                        colour = "RED", alpha = 1/2, size = 1)
+zp1 <- zp1 + coord_equal()  # Better projections are left for a future post
+zp1 <- zp1 + theme_minimal()  # Drop background annotations
+print(zp1)
+
+
+
+vbzdtgcv
+
+
+
+```
+Parte 8
+
+Sentiment Analysis
+```{r Extrac_Users4}
+install.packages("syuzhet")
+library(syuzhet)
+d <- get_nrc_sentiment(df$text)
+
+td <- data.frame(t(d))
+ 
+td_new <- data.frame(rowSums(td[2:198]))
+#The function rowSums computes column sums across rows for each level of a grouping variable.
+ 
+#Transformation and  cleaning
+names(td_new)[1] <- "count"
+td_new <- cbind("sentiment" = rownames(td_new), td_new)
+rownames(td_new) <- NULL
+td_new2<-td_new[1:10,]
+#Visualisation
+library("ggplot2")
+qplot(sentiment, data=td_new2, weight=count, geom="bar",fill=sentiment)+ggtitle("Tweets  sentiments")
+
+
+
+```

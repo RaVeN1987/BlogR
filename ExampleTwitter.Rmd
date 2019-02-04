@@ -1,0 +1,78 @@
+---
+title: "brandbastion"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Example Twitter
+
+
+```{r loaddata, message= FALSE}
+
+library(rtweet)
+library(DT)
+library(googleway)
+key <- "AIzaSyCKmVGEUAEaj9U520Z8Ce_scQQzhmrBSfk"
+
+rdmTweets <- search_tweets(
+  "#christmas", n = 18000, include_rts = FALSE
+)
+
+#Clean all the empty columns
+df <- rdmTweets[, !apply(is.na(rdmTweets), 2, all)]
+#write.csv(df, "rdmTweets.csv", col.names = T , sep = ",", dec = ".")
+#write.table(df, file = "foo.csv", row.names = FALSE, col.names = T )
+
+Who <- table(rdmTweets$screen_name)
+barplot(Who[1:20])
+cc = sort(Who, decreasing=T)
+cc <- as.data.frame(cc)
+colnames(cc) <- c("User","Frecuency")
+datatable(cc)
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure,  results='asis', tidy=TRUE}
+Where <- table(rdmTweets$place_name)
+barplot(Where)
+places = sort(Where, decreasing=T)
+places <- as.data.frame(places)
+datatable(places)
+places$Var1 <- as.character(places$Var1)
+
+
+
+for (i in 1:nrow(places)) {
+  geocode <- google_geocode(address = places$Var1[i], key = key)
+  geocode <- as.data.frame(geocode[[1]])
+  v <- geocode$geometry
+  location <- v$location
+  places$Long[i] <- location$lng
+  places$Lat[i] <- location$lat
+  
+}
+
+colnames(places) <- c("Place","Frecuency","Long","Lat")
+
+
+library(leaflet)
+
+leaflet(placesTest) %>% addTiles()%>%
+  addCircles(lng = ~Long, lat = ~lat, weight = 1,
+             radius = ~Frecuency, popup = ~Place
+  )
+
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

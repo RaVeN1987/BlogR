@@ -1,0 +1,194 @@
+---
+title: "Lector de palabras de txt"
+author: "Tomas Castaño"
+date: "29 de julio de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r instalacion_librerias}
+install.packages("tm")
+install.packages("wordcloud")
+install.packages("RColorBrewer")
+install.packages("magrittr")
+install.packages("ggplot2")
+install.packages("Rstem")
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r Carga_librerias}
+require(ggplot2)
+require(tm)
+require(wordcloud)
+require(RColorBrewer)
+require(magrittr)
+require(Rstem)
+
+```
+
+```{r Carga_librerias}
+
+getwd()
+setwd("C:/Users/Tomas/Desktop")
+r <- readDOC("PicoTex.doc")
+nov_raw <- paste(readLines(file.path("PicoTex.txt")), collapse=' ')
+
+```
+
+```{r Codigo_txt}
+
+str(nov_raw)
+diez <- rep(1:ceiling(length(nov_raw)/10), each = 10)
+diez <- diez[1:length(nov_raw)]
+nov_text <- cbind(diez, nov_raw) %>% data.frame()
+nov_text <- aggregate(formula = nov_raw ~ diez,
+                      data = nov_text,
+                      FUN = paste,
+                      collapse = " ")
+nov_text <- nov_text %>% select(nov_raw) %>% as.matrix
+
+dim(nov_text)
+nov_text <-
+  cbind(
+    rep(1:ceiling(length(nov_raw)/10), each = 10) %>%
+      .[1:length(nov_raw)],
+    nov_raw
+  ) %>%
+  data.frame %>%
+  aggregate(
+    nov_raw ~ V1,
+    data = .,
+    FUN = paste,
+    collapse=" ") %>%
+  select(nov_raw) %>%
+  as.matrix
+
+dim(nov_text)
+nov_text <- gsub("[[:cntrl:]]", " ", nov_text)
+nov_text <- tolower(nov_text)
+nov_text <- removeWords(nov_text, words = stopwords("spanish"))
+nov_text <- removePunctuation(nov_text)
+nov_text <- removeNumbers(nov_text)
+nov_text <- stripWhitespace(nov_text)
+nov_corpus <- Corpus(VectorSource(nov_text))
+
+nov_corpus
+nov_ptd <- tm_map(nov_corpus, PlainTextDocument)
+wordcloud(nov_ptd, max.words = 80, random.order = F, colors = brewer.pal(name = "Dark2", n = 8))
+
+nov_text <- removeWords(nov_text, words = c("usted", "pues", "tal", "tan", "así", "dijo", "cómo", "sino", "entonces", "aunque", "don", "doña"))
+
+nov_corpus <- nov_text %>% VectorSource() %>% Corpus()
+nov_ptd <- nov_corpus %>% tm_map(PlainTextDocument)
+
+wordcloud(
+  nov_ptd, max.words = 80, 
+  random.order = F, 
+  colors=brewer.pal(name = "Dark2", n = 8)
+)
+nov_tdm <- TermDocumentMatrix(nov_corpus)
+nov_tdm
+nov_mat <- as.matrix(nov_tdm)
+dim(nov_mat)
+nov_mat <- nov_mat %>% rowSums() %>% sort(decreasing = TRUE)
+nov_mat <- data.frame(palabra = names(nov_mat), frec = nov_mat)
+wordcloud(
+  words = nov_mat$palabra, 
+  freq = nov_mat$frec, 
+  max.words = 80, 
+  random.order = F, 
+  colors=brewer.pal(name = "Dark2", n = 8)
+)
+nov_mat[1:20, ]
+nov_mat[1:10, ] %>%
+  ggplot(aes(palabra, frec)) +
+  geom_bar(stat = "identity", color = "black", fill = "#87CEFA") +
+  geom_text(aes(hjust = 1.3, label = frec)) + 
+  coord_flip() + 
+  labs(title = "Diez palabras más frecuentes en Picotex",  x = "Palabras", y = "Número de usos")
+
+nov_mat %>%
+  mutate(perc = (frec/sum(frec))*100) %>%
+  .[1:10, ] %>%
+  ggplot(aes(palabra, perc)) +
+  geom_bar(stat = "identity", color = "black", fill = "#87CEFA") +
+  geom_text(aes(hjust = 1.3, label = round(perc, 2))) + 
+  coord_flip() +
+  labs(title = "Diez palabras más frecuentes en Picotex", x = "Palabras", y = "Porcentaje de uso")
+
+findAssocs(nov_tdm, terms = c("augusto", "eugenia", "hombre", "mujer"), corlimit = .25)
+
+
+```
+
+
+```{r 2}
+
+# here is a pdf for mining
+url <- "http://www.noisyroom.net/blog/RomneySpeech072912.pdf"
+dest <- tempfile(fileext = ".pdf")
+download.file(url, dest, mode = "wb") -> x
+
+# set path to pdftotxt.exe and convert pdf to text
+exe <- "C:\\Program Files\\xpdfbin-win-3.03\\bin32\\pdftotext.exe"
+system(paste("\"", exe, "\" \"", dest, "\"", sep = ""), wait = F)
+
+# get txt-file name and open it
+filetxt <- sub(".pdf", ".txt", dest)
+shell.exec(filetxt); shell.exec(filetxt) # strangely the first try always throws an error..
+
+# do something with it, i.e. a simple word cloud
+library(tm)
+library(wordcloud)
+library(Rstem)
+
+txt <- readLines(filetxt) # don't mind warning..
+
+txt <- tolower(txt)
+txt <- removeWords(txt, c("\\f", stopwords()))
+
+corpus <- Corpus(VectorSource(txt))
+corpus <- tm_map(corpus, removePunctuation)
+tdm <- TermDocumentMatrix(corpus)
+m <- as.matrix(tdm)
+d <- data.frame(freq = sort(rowSums(m), decreasing = TRUE))
+
+# Stem words
+d$stem <- wordStem(row.names(d), language = "english")
+
+# and put words to column, otherwise they would be lost when aggregating
+d$word <- row.names(d)
+
+# remove web address (very long string):
+d <- d[nchar(row.names(d)) < 20, ]
+
+# aggregate freqeuncy by word stem and
+# keep first words..
+agg_freq <- aggregate(freq ~ stem, data = d, sum)
+agg_word <- aggregate(word ~ stem, data = d, function(x) x[1])
+
+d <- cbind(freq = agg_freq[, 2], agg_word)
+
+# sort by frequency
+d <- d[order(d$freq, decreasing = T), ]
+
+# print wordcloud:
+wordcloud(d$word, d$freq)
+
+# remove files
+file.remove(dir(tempdir(), full.name=T)) # remove files
+
+```

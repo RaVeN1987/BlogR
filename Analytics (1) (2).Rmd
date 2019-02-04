@@ -1,0 +1,259 @@
+---
+title: "Analisis de Google analytics en Rstudio, extract data"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+install.packages(c("RCurl", "rjson","RGoogleAnalytics", "ggplot2", "plyr", "gridExtra", "reshape"))
+```{r Library_procurement}
+install.packages(c("RCurl", "rjson","RGoogleAnalytics", "ggplot2", "plyr", "gridExtra", "reshape"))
+install.packages("rmarkdown", repos="https://cloud.r-project.org")
+
+```
+
+
+```{r libraries}
+require(RGoogleAnalytics)
+library(devtools)
+library(curl)
+library(rga)
+require("RCurl")
+require("rjson")
+require("ggplot2")
+require("plyr")
+require("gridExtra")
+require("reshape")
+require("RGoogleAnalytics")
+require("magrittr")
+
+```
+
+
+```{r Conexion_1}
+rga.open(instance = "ga")
+ga$getData(139851260) -> id
+id <- 139851260
+
+```
+
+## Including Plots
+
+# You can also embed plots, for example:
+# Conexion
+
+Modelo 1: Usuarios, Sesiones, Paginas Vistas, Porcentaje de rebote
+```{r Extracion}
+#consulta de datos
+ga$getData(id)
+gaSesiones <- ga$getData(id, start.date = as.Date("2017-04-01"), 
+                     end.date=as.Date("2017-07-30"), metrics = "ga:pageviews, ga:pageviewsPerSession, ga:timeOnPage, ga:exitRate",
+                     dimensions = "ga:date,ga:visitCount", 
+                     sort = "-ga:date", start = 10)
+#write to csv file called My Data Export
+as.Date(gaSesiones$date,format="%Y/%m/%d")
+write.csv(gaSesiones, "My_Data_Export.csv")
+
+#########################################################################################################
+gaSessions <- ga$getData(id, start.date = as.Date("2017-04-01"), 
+                     end.date=as.Date("2017-07-30"), metrics = "ga:sessions,ga:pageviews",
+                     dimensions = "ga:date", 
+                     sort = "-ga:date", start = 1)
+#write to csv file called My Data Export
+as.Date(gaSesiones$date,format="%Y/%m/%d")
+write.csv(gaSessions, "My_Data_Export1.csv")
+
+
+gaContent <- ga$getData(id, start.date = as.Date("2017-04-01"), 
+                     end.date=as.Date("2017-07-30"), metrics = "ga:pageviews,ga:uniquePageviews,ga:timeOnPage,ga:bounces,ga:entrances,ga:exits",
+                     dimensions = "ga:pagePath", 
+                     sort = "-ga:pageviews", start = 1)
+#write to csv file called My Data Export
+as.Date(gaSesiones$date,format="%Y/%m/%d")
+write.csv(gaContent, "My_Data_Export2.csv")
+
+
+gaSessions <- ga$getData(id, start.date = as.Date("2012-09-18"), 
+                     end.date=as.Date("2017-03-17"), 
+                     metrics = "ga:users, ga:newUsers,ga:percentNewSessions,
+                     ga:sessionsPerUser, ga:bounces, ga:sessions",
+                     dimensions = "ga:date, ga:userType, ga:sessionDurationBucket, ga: source,                      ga:country, ga:socialNetwork,ga:visitCount") -> x
+write.csv(gaSessions, "My_Data_Export3.csv")
+
+gaVisits <- ga$getData(id, start.date = as.Date("2016-09-18"), 
+                     end.date=as.Date("2017-03-17"), 
+                     metrics = "ga:visitors",
+                     filters ="ga:visitCount==1",
+                     dimensions = "ga:visitCount, ga:date, ga:day")
+write.csv(gaVisits, "My_Data_Export4.csv")
+
+as.data.frame(x)
+getwd()
+write.csv(x, "My_Data_Export2.csv")
+query <- QueryBuilder()
+
+x <- Init(id, start.date = as.Date("2012-09-18"), 
+                     end.date=as.Date("2017-03-17"), 
+                     dimensions = "ga:date,ga:visitCount")
+
+as.data.frame(x)
+
+View(gaData)
+# Count of each value of "id" in the first 100 cases
+count(My_Data_Export2$sessions, vars = "date")
+
+# Count of times each player appeared in each of the years they played
+count(My_Data_Export2, c("sessions", "date")) -> prueba
+# Count of counts
+count(count(baseball[1:100,], c("id", "year")), "id", "freq")
+count(count(baseball, c("id", "year")), "freq")
+
+getwd()
+
+
+
+ga$getData(id)
+gaUsuarios <- ga$getData(id, start.date = as.Date("2014-04-01"), 
+                     end.date=as.Date("2017-07-01"), metrics = "ga:users", "ga:newUsers",
+                     dimensions = "ga:date", 
+                     sort = "-ga:date", start = 1)
+
+as.data.frame(gaUsuarios) -> x
+#write to csv file called My Data Export
+as.Date(gaUsuarios$date,format="%Y/%m/%d")
+write.csv(gaData, "My_Data_Export.csv")
+
+ts_Datos_Malaga <- ts(gaUsuarios$users, frequency=1, start=c(2017, 4))
+plot.ts(gaUsuarios$users)
+
+```
+
+```{r limpieza_de_datos_modificacion}
+
+
+
+
+```
+
+
+Page Tracking
+
+
+```{r Carga}
+
+
+
+```
+
+```{r Paginas_vistas}
+
+plot(gaUsuarios$date, gaUsuarios$users)
+Usuariosts=ts(gaUsuarios$users)
+goles
+plot(Usuariosts,main="Evoluci?n de los Usuarios en el ultimo trimestre",xlab="Fecha",ylab="N?mero de usuarios")
+grid()
+tempGando=ts(gaUsuarios$users,freq=365,start=c(2017,4))
+plot(tempGando,main="Evoluci?n de los Usuarios en el ultimo trimestre",xlab="Fecha",ylab="N?mero de usuarios")
+
+
+
+hist(gaData$date, gaData$pageviews)
+write.csv(gaData, "My Data Export.csv")
+
+
+ga$getData(id, 
+   start.date="2015-01-01", 
+   end.date="2015-03-31", 
+   metrics="ga:sessions,ga:bounceRate, ga:percentNewSessions,ga:avgSessionDuration", 
+   dimensions="ga:yearMonth", 
+   filters="ga:source==google",
+   segment="gaid::-5")
+
+
+
+
+#Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#QueryBuilder
+
+```
+
+
+
+Modelo 2
+
+```{r Modelo_2}
+
+
+# Step 1. Authorize your account and paste the accesstoken - you will be asked to paste it in the console after you run the second line below.
+
+query <- QueryBuilder()
+access_token <- query$authorize()
+# Step 5. Setting up the input parameters - here you should think deeply about your analysis time range, the dimensions (note that in order to do a line chart for a time series you must add the "ga:date" dimension), metrics, filters, segments, how the data is sorted and the # of results.
+profile <- ga.webProfile$id[1] 
+startdate <- "2013-12-08"
+enddate <- "2014-02-15"
+dimension <- "ga:date,ga:region"
+metric <- "ga:visits, ga:avgTimeOnSite, ga:transactions" 
+filter <- "ga:country==United States"
+sort <- "ga:date"
+maxresults <- 10000
+
+#Step 6. Build the query string, use the profile by setting its index value.
+
+query$Init(start.date = "2013-12-08",
+           end.date = "2014-02-15",
+           dimensions = "ga:date, ga:region",
+           metrics = "ga:visits, ga:avgTimeOnSite, ga:transactions",
+           sort = "ga:date, -ga:visits",
+           filters="ga:country==United States",
+           max.results = 10000,
+           table.id = paste("ga:",ga.webProfile$id[1],sep="",collapse=","),
+           access_token=access_token)
+
+#Step 7. Make a request to get the data from the API.
+
+ga.data <- ga$GetReportData(query)
+
+```
+
+
+
+```{r Modelo_3}
+require("RGoogleAnalytics")
+require(RGoogleAnalytics)
+
+# Authorize the Google Analytics account
+# This need not be executed in every session once the token object is created 
+# and saved
+token <- Auth(client.id,client.secret)
+
+# Save the token object for future sessions
+save(token,file="./token_file")
+
+# In future sessions it can be loaded by running load("./token_file")
+
+ValidateToken(token)
+
+# Build a list of all the Query Parameters
+query.list <- ga$getData(id, start.date = "2014-01-01",
+                   end.date = "2015-08-01",
+                   dimensions = "ga:country",
+                   metrics = "ga:sessions",
+                   sort = "ga:sessions",
+                   max.results = 1000,
+                   table.id = "ga:12345678") 
+
+# Create the Query Builder object so that the query parameters are validated
+ga.query <- QueryBuilder(query.list)
+
+# Extract the data and store it in a data-frame
+ga.df <- GetReportData(ga.query,token)
+
+
+```

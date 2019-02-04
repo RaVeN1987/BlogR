@@ -1,0 +1,52 @@
+---
+title: "Conexion a Twitter"
+author: "Tomas Castaño"
+date: "13 de mayo de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Instalamos la librería  de twitteR
+
+Creamos dos variables con la clave que nos ha facilitado [Twitter Developers](https://apps.twitter.com/), en este caso api_key y api_secret.
+
+Utilizamos al función  de identificación  de twitter.
+
+y ya estamos conectados.
+
+
+```{r Conexion}
+library(twitteR)
+api_key <- "ewmcv54a1xJNiUh5ILJdt75OV"
+api_secret <- "1gIRrhMaKUh5DHRaNLqqnzG9M5nkZLDCAQbZcvMzoqCudq4JPM"
+setup_twitter_oauth(api_key,api_secret)
+```
+
+
+Creamos la consulta utilizando la función searchTwitter, el que vemos diferentes parametros:
+
+El primer parámetro es la palabra o hashtag a buscar
+
+El segundo parámetro es el número de tweets que queremos.
+
+El tercero es la referencia geografía, si queremos tweets de alguna región específica 
+deberemos especificarlo latitud, longitud y radio, es decir por ejemplo: geocode='37.781157,-122.39720,1km'.
+
+También podemos especificar las fechas de búsqueda, aunque twitter las limita a 7 días de histórico.
+
+
+```{r Consulta_Twitter}
+Consulta = searchTwitter("radiation", geo='40.463667, -3.7492200000000366, 6000km')
+```
+
+Una vez generada la consulta guardamos el nuevo dataset con  un formato en el que podamos trabajar con él, usándola función twListToDF.
+
+Para guardarlo en un csv usamos la función write.csv, dándole el nombre del data set y el nombre del archivo que queremos que nos cree.
+
+```{r Tranformacion_y_guardado}
+Datos_Tweets = twListToDF(Consulta)
+write.csv(Datos_Tweets, file = "Datos_Tweets.csv")
+```
